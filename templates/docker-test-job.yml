@@ -1,0 +1,26 @@
+.docker-test-template:
+  script:
+    - docker-compose -f ${DOCKER_COMPOSE_FILE} up -d
+
+    - |
+      echo "Getting nginx container ID..."
+      NGINX_CONTAINER=$(docker-compose -f ${DOCKER_COMPOSE_FILE} ps -q ${TARGET_SERVICE})
+      echo "Container ID: $NGINX_CONTAINER"
+
+    - sleep 30
+
+    - |
+      echo "Checking nginx response..."
+      docker run --network "container:$NGINX_CONTAINER" \
+        curlimages/curl:8.5.0 \
+        curl --retry 5 --retry-delay 3 --fail http://localhost:${TARGET_PORT}/
+
+    - echo "TESTS PASSED"
+  
+  after_script:
+    - docker-compose -f ${DOCKER_COMPOSE_FILE} logs
+    - docker-compose -f ${DOCKER_COMPOSE_FILE} down -v
+
+# DOCKER_COMPOSE_FILE
+# TARGET_SERVICE
+# TARGET_PORT
